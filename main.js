@@ -20,6 +20,7 @@ var stagingCanvas = document.createElement('canvas');
 stagingCanvas.height = stagingCanvas.width = CUBE_SIZE;
 var stagingContext = stagingCanvas.getContext('2d');
 
+var highlight_segments = true
 
 var CHUNKS = [
   [0,0,0],
@@ -398,7 +399,10 @@ Tile.prototype.draw = function () {
   }
 
   // if (controls.snapState === controls.SNAP_STATE.ORTHO) {
+  if (highlight_segments) { 
     highlight();
+  }
+
   // }
   planes.z.material.materials[5].map.needsUpdate = true;
 };
@@ -754,29 +758,9 @@ var planes = {};
     cube.add(planesHolder);
 
     planesHolder.add(planes.z);
-
-
-    var test = new THREE.Mesh( new THREE.BoxGeometry( 0.1, 0.1, 0.1 ), new THREE.MeshNormalMaterial({
-  transparent: false,
-  opacity: 1
-}) );
-// test.position.set(0, 0, 1);
-// planes.z.add(test);
   }
 
-  // {
-  //   var material = new THREE.MeshBasicMaterial( {color: 0x00ff00, side: THREE.DoubleSide, transparent: true, opacity: 0.2} );
-  //   planes.y = new THREE.Mesh(planeGeo, material);
-  //   planes.y.rotation.x = Math.PI / 2;
-  //   cube.add(planes.y);
-  // }
 
-  // {
-  //   var material = new THREE.MeshBasicMaterial( {color: 0xff0000, side: THREE.DoubleSide, transparent: true, opacity: 0.2} );
-  //   planes.x = new THREE.Mesh(planeGeo, material);
-  //   planes.x.rotation.y = Math.PI / 2;
-  //   cube.add(planes.x);
-  // }
 
 ///////////////////////////////////////////////////////////////////////////////
 /// loading 3d mesh data
@@ -961,45 +945,17 @@ function loadTiles(done) {
   needsRender = true;
 }
 
-// loads all task data and calls done handler when both are complete
-function playTask(task) {
-  setTask(task);
-
-  // $('#loadingText').show();
-
-  // var loadingIndicator = setInterval(function () {
-  //   $('#loadingText').html($('#loadingText').html() + '.');
-  // }, 2000);
-
-  // loadTaskData(function () {
-  //   console.log('we are done loading!');
-  //   clearInterval(loadingIndicator);
-
-  //   // enable the submit task button
-  //   $('#submitTask').click(function () {
-  //     var url = 'https://eyewire.org/2.0/tasks/' + assignedTask.id + '/testsubmit';
-  //     $.post(url, 'status=finished&segments=' + assignedTask.selected.join()).done(function (res) {
-  //       $('#results').html('score ' + res.score + ', accuracy ' + res.accuracy + ', trailblazer ' + res.trailblazer);
-  //     });
-  //   });
-  // });
-}
-
 
 // kick off the game
-function start() {
+(function start() {
   //1029032
   //1043593  this one has segment 
-  $.post('https://tasking.eyewire.org/1.0/tasks/testassign').done(playTask);
-}
-start();
+  $.post('https://tasking.eyewire.org/1.0/tasks/testassign').done(setTask);
+})();
 
 var raycaster = new THREE.Raycaster();
 var mouse = new THREE.Vector2();
-
-
 var mouseStart = null;
-
 var isZoomed = false;
 
 function tileClick(x, y) {
@@ -1263,28 +1219,24 @@ function handleInput() {
   }
 
   if (key('z', HELD)) {
-    // if (isZoomed) {
-      // animateToPositionAndZoom(new THREE.Vector3(0, 0, 0), 1);
-    // } else {
+
       var point = getPositionOnTileFromMouse(mouse);
 
       if (point) {
         animateToPositionAndZoom(point, 4);
       }
-    // }
-  } else {
-    // if (isZoomed && mouseStart === null) {
-    //   var point = getPositionOnTileFromMouse(mouse);
+  }
+  if (key('shift', PRESSED)) {
 
-    //   if (point && point.distanceTo(centerPoint) > 0.2) {
+    highlight_segments = false
+    TileManager.currentTile().draw();
+    needsRender = true;
+  }
+  if (key('shift', RELEASED)) {
 
-    //       animateToPositionAndZoom(point, 4);
-    //   }
-
-    //   if (point) {
-    //     console.log(point.distanceTo(centerPoint));
-    //   }
-    // }
+    highlight_segments = true
+    TileManager.currentTile().draw();
+    needsRender = true;
   }
 
 
@@ -1321,6 +1273,7 @@ function animate() {
   TWEEN.update();
   controls.update();
 
+  // console.log(needsRender)
   if (needsRender) {
     needsRender = false;
     render();
